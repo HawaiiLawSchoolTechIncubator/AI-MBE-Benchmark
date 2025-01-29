@@ -153,8 +153,17 @@ def chatGPT(question,model):
     
     # Start the timer so we can get total time.
     start_time = time.time()
-    # Generate the completion
-    response = open_ai_client.chat.completions.create(
+    #The o1 models don't support system role.
+    if "o1" in model:
+            # Generate the completion
+        response = open_ai_client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "user", "content": "You are an expert attorney." + final_prompt},
+        ]
+        )      
+    else:
+        response = open_ai_client.chat.completions.create(
         model=model,
         temperature=temperature,
         top_p=top_p,
@@ -162,7 +171,9 @@ def chatGPT(question,model):
             {"role": "system", "content": "You are an expert attorney."},
             {"role": "user", "content": final_prompt},
         ]
-    )
+        )
+
+
     # End the timer and calculate the duration
     end_time = time.time()
     duration = end_time - start_time
@@ -339,6 +350,75 @@ def claude(question,model):
 
 
     return results_dictionary
+
+def grok(question,model):
+    # Get the API key from the environment variables
+    xai_api_key = os.getenv("xai_api_key")
+
+    # Create the OpenAI client
+    grok_client = OpenAI(
+        api_key=xai_api_key,
+        base_url="https://api.x.ai/v1")
+
+    prompt_setup = "Choose the correct answer to the following question."
+    final_prompt = prompt_setup + question + "Your response should be a single letter (A, B, C, or D) nothing else."
+    
+    # Start the timer so we can get total time.
+    start_time = time.time()
+    # Generate the completion
+    response = grok_client.chat.completions.create(
+        model=model,
+        temperature=temperature,
+        top_p = top_p,
+        messages=[
+            {"role": "system", "content": "You are an expert attorney."},
+            {"role": "user", "content": final_prompt},
+        ]
+    )
+    # End the timer and calculate the duration
+    end_time = time.time()
+    duration = end_time - start_time
+    #saveFullResponseText(response,question_id,model)
+
+    results_dictionary = {}
+    
+
+    # Extract the answer from the response and clean it to remove any special characters.
+    # This is needed because sometimes the response may be "A." so we need to remove the .
+    answer = response.choices[0].message.content
+    results_dictionary['Original Answer'] = answer.strip()
+    answer_joined = ''.join(c for c in answer if c.isalpha()).strip()
+
+    # If the answer is more than one letter after removing special characters, then there is an error.
+    if(len(answer_joined) > 1):
+        ai_answer = useChatGPTToGetAnswerFromLongAnswer(results_dictionary['Original Answer'])
+    else:
+        ai_answer = None
+
+    #Sets the "best answer" this will speed up the human double checking afterwards.
+    if(ai_answer != None):
+        best_answer = ai_answer
+    else:
+        best_answer = answer
+    
+    #Get cost of tokens
+    cost_per_million_tokens_prompt,cost_per_million_tokens_completion = getCostOfModel(model)
+
+    results_dictionary["Answer Special Characters Removed"] = answer
+    results_dictionary["AI answer"] = ai_answer
+    results_dictionary["Best Answer"] = best_answer
+    results_dictionary["completion_tokens"] = response.usage.completion_tokens
+    results_dictionary["prompt_tokens"] = response.usage.prompt_tokens
+    results_dictionary["prompt_cost"] = (results_dictionary["prompt_tokens"] / 1_000_000) * cost_per_million_tokens_prompt
+    results_dictionary["completion_cost"] = (results_dictionary["completion_tokens"] / 1_000_000) * cost_per_million_tokens_completion
+    results_dictionary["total_tokens"] = response.usage.total_tokens
+    results_dictionary["total_cost"] = results_dictionary["prompt_cost"] + results_dictionary["completion_cost"]
+    results_dictionary["duration"] = duration
+    results_dictionary["response"] = str(response)
+
+    return results_dictionary
+
+
 
 
 #Set Default Values

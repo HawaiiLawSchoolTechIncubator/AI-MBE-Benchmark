@@ -18,7 +18,7 @@ QuestionsAnswered = []
 total_number_of_questions = 0
 
 # Opens up the csv file and reads it in as a dictionary
-with open("..//Temperature Set to 0 8-27-24//NCBE MBE Questions_Answer_HumanChecked.csv", "r", encoding="utf-8") as csvobj:
+with open("..//Results//NCBE MBE Questions_Answer_HumanChecked.csv", "r", encoding="utf-8") as csvobj:
     csvreader = csv.DictReader(csvobj)
 
     # Goes through the csv file and adds an item to the array for each AI model
@@ -89,7 +89,7 @@ plt.savefig(f"graphs//{title}.png")
 # Cost of each AI Model
 cost_ai_dictionary = dict(zip(AIName, AIAverageCost))
 cost_ai_answers = dict(sorted(cost_ai_dictionary.items(), key=lambda x: x[1], reverse=True))
-title = 'Average Cost of Each Question & Answer Query'
+title = 'Average Cost of Each Question & Answer Query By AI Model'
 plt.figure(figsize=(12, 8))  # Increase the figure width
 plt.bar(cost_ai_answers.keys(), cost_ai_answers.values())
 plt.xlabel('AI Model', fontsize=label_font)  # Set font size for x-axis label
@@ -165,7 +165,7 @@ plt.savefig(f"graphs//{title}.png")
 # Time spent per question
 duration_ai_dictionary = dict(zip(AIName, AvgDuration))
 duration_ai_sorted = dict(sorted(duration_ai_dictionary.items(), key=lambda x: x[1], reverse=True))
-title = 'Average Query Time Per Question'
+title = 'Average Query Time Per Question By AI Model'
 plt.figure(figsize=(10, 10))  # Increase the figure size
 plt.bar(duration_ai_sorted.keys(), duration_ai_sorted.values())
 plt.xlabel('AI Model', fontsize=label_font)  # Set font size for x-axis label

@@ -1,0 +1,5 @@
+The query ran the gemini "latest" models which point to the specific models below.
+Gemini 1.5 Flash (gemini-1.5-flash-latest) pointed to "gemini-1.5-flash-001" on August 27th 2024 when the query was run.
+Gemini 1.5 Pro (gemini-1.5-pro-latest) pointed to "gemini-1.5-pro-001" on August 27th 2024 when the query was run.
+Gemini 1.0 pro (gemini-1.0-pro-latest) pointed to "gemini-1.0-pro-002" on August 27th 2024 when the query was run.
+See https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions for more information.

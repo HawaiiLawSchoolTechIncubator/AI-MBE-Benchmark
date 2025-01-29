@@ -1,11 +1,15 @@
 import csv
 from mc_utilities import *
 import os
+from datetime import datetime
 
 
 def writeAnswerToCSV(results):
     # Open the output.csv file in append mode
-    with open(filename.replace(".csv","") + '_Answer.csv', 'a', newline='',encoding='utf-8') as file:
+    results['Timestamp'] = datetime.now().strftime('%Y-%m-%d')
+    
+    filename_with_timestamp = filename.replace(".csv", f"_{results['Timestamp']}_Answer.csv")
+    with open(filename_with_timestamp, 'a', newline='', encoding='utf-8') as file:
         fieldnames = results.keys()
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         
@@ -25,6 +29,73 @@ def checkIfAlreadyAnswered(question_number,model):
             if row['Question Number'] == question_number and row['Model'] == model:
                 return True
     return False
+def checkAgainstSingleAI(question,question_number,right_answer,question_category,ai_platform,models):
+    #Check ChatGPT models
+    if ai_platform == "ChatGPT":
+        for model in models:
+            if(checkIfAlreadyAnswered(question_number,model)):
+                continue
+            results = chatGPT(question,model)
+            results['Question Number'] = question_number
+            results['Law Category'] = question_category
+            results['Right Answer'] = right_answer
+            results['Model'] = model
+            results['AI Platform'] = ai_platform
+            results['total_cost'] = f"{results['total_cost']:.10f}".rstrip('0').rstrip('.')
+            results['prompt_cost'] = f"{results['prompt_cost']:.10f}".rstrip('0').rstrip('.')
+            results['completion_cost'] = f"{results['completion_cost']:.10f}".rstrip('0').rstrip('.')
+            results['Correct'] = True if results['Right Answer'] == results['Best Answer'] else False
+            writeAnswerToCSV(results)
+    elif ai_platform == 'Gemini':
+        #Check Gemini
+        for model in models:
+            if(checkIfAlreadyAnswered(question_number,model)):
+                continue
+            results = gemini(question,model)
+            results['Question Number'] = question_number
+            results['Law Category'] = question_category
+            results['Right Answer'] = right_answer
+            results['Model'] = model
+            results['AI Platform'] = ai_platform
+            results['total_cost'] = f"{results['total_cost']:.10f}".rstrip('0').rstrip('.')
+            results['prompt_cost'] = f"{results['prompt_cost']:.10f}".rstrip('0').rstrip('.')
+            results['completion_cost'] = f"{results['completion_cost']:.10f}".rstrip('0').rstrip('.')
+            results['Correct'] = True if results['Right Answer'] == results['Best Answer'] else False
+            writeAnswerToCSV(results)
+            #time.sleep(30) #Sleep for 30 seconds to avoid rate limiting (only for gemini 2)
+    elif ai_platform == "Grok":
+        for model in models:
+            if(checkIfAlreadyAnswered(question_number,model)):
+                continue
+            results = grok(question,model)
+            results['Question Number'] = question_number
+            results['Law Category'] = question_category
+            results['Right Answer'] = right_answer
+            results['Model'] = model
+            results['AI Platform'] = ai_platform
+            results['total_cost'] = f"{results['total_cost']:.10f}".rstrip('0').rstrip('.')
+            results['prompt_cost'] = f"{results['prompt_cost']:.10f}".rstrip('0').rstrip('.')
+            results['completion_cost'] = f"{results['completion_cost']:.10f}".rstrip('0').rstrip('.')
+            results['Correct'] = True if results['Right Answer'] == results['Best Answer'] else False
+            writeAnswerToCSV(results)
+            time.sleep(1)
+    elif ai_platform == "Claude":
+        for model in models:
+            if(checkIfAlreadyAnswered(question_number,model)):
+                continue
+            results = claude(question,model)
+            results['Question Number'] = question_number
+            results['Law Category'] = question_category
+            results['Right Answer'] = right_answer
+            results['Model'] = model
+            results['AI Platform'] = ai_platform
+            results['total_cost'] = f"{results['total_cost']:.10f}".rstrip('0').rstrip('.')
+            results['prompt_cost'] = f"{results['prompt_cost']:.10f}".rstrip('0').rstrip('.')
+            results['completion_cost'] = f"{results['completion_cost']:.10f}".rstrip('0').rstrip('.')
+            results['Correct'] = True if results['Right Answer'] == results['Best Answer'] else False
+            writeAnswerToCSV(results)
+
+
 def checkQuestionAgainstAllAis(question,question_number,right_answer,question_category):
     #Check Claude
     ai_platform = "Claude"
@@ -48,6 +119,7 @@ def checkQuestionAgainstAllAis(question,question_number,right_answer,question_ca
     #Check Gemini
     ai_platform = "Gemini"
     geimin_models = ['gemini-1.0-pro-latest','gemini-1.5-pro-latest','gemini-1.5-flash-latest']
+    #When run on August 27th 2024, these pointed to gemini-1.0-pro-002, gemini-1.5-pro-001, gemini-1.5-flash-001
     for model in geimin_models:
         if(checkIfAlreadyAnswered(question_number,model)):
             continue
@@ -104,6 +176,8 @@ def checkQuestionAgainstAllAis(question,question_number,right_answer,question_ca
 
 
 filename = 'NCBE MBE Questions.csv'
+ai_platform = "Gemini"
+models = ["gemini-1.0-pro-001"]
 with open(filename, 'r', encoding='utf-8-sig') as file:
     reader = csv.DictReader(file)
     for x,row in enumerate(reader):
@@ -124,7 +198,8 @@ with open(filename, 'r', encoding='utf-8-sig') as file:
         """
         #print(full_question)
         print("Question Number: ",question_number)
-        checkQuestionAgainstAllAis(full_question,question_number,right_answer,question_category)
-        time.sleep(1)
+        #checkQuestionAgainstAllAis(full_question,question_number,right_answer,question_category)
+        checkAgainstSingleAI(full_question,question_number,right_answer,question_category,ai_platform,models)
+        time.sleep(.3)
         if x > 250:
             break

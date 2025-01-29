@@ -12,6 +12,9 @@ This study was conducted by the William S. Richardson School of Law. The authors
 - **Joshua Casey**
     - University of Hawaii, William S. Richardson School of Law Graduate 2025
 
+We continue to add new models as they come online. See our interactive dashboard at https://ai-mbe-study.streamlit.app/.
+
+To view the code the original paper [url TBD] was run on please look at the initial commit from October 24th, 2024. This repository is updated with new models as they come out.
 
 ## Methodology
 The study was conducted on 16 models from Open AI, Google, Meta, and Anthropic. The list of A.I. models used are below. The models were asked to solve 210 sample MBE questions obtained from the National Conference of Bar Examiners at https://store.ncbex.org/mbe-study-aid-download/. For a full explantion of the study please see the full report.
@@ -19,15 +22,23 @@ The study was conducted on 16 models from Open AI, Google, Meta, and Anthropic. 
 ## Models:
 - **Open AI**
     - gpt-4o-2024-05-13
+    - gpt-4o-2024-11-20
+    - gpt-4o-2024-08-06
     - gpt-4-0613
     - gpt-4-turbo-2024-04-09
     - gpt-4o-mini-2024-07-18
     - gpt-3.5-turbo-0125
+    - o1-mini-2024-09-12
 
 - **Google**
-    - gemini-1.5-pro-latest
-    - gemini-1.5-flash-latest
-    - gemini-1.0-pro-latest
+    - gemini-1.5-pro-001
+    - gemini-1.5-pro-002
+    - gemini-1.5-flash-001
+    - gemini-1.5-flash-002
+    - gemini-1.5-flash-8b
+    - gemini-1.0-pro-001
+    - gemini-1.0-pro-002
+    - gemini-2.0-flash-exp
 
 - **Meta**
     - Meta-Llama-3.1-405B-Instruct
@@ -38,8 +49,13 @@ The study was conducted on 16 models from Open AI, Google, Meta, and Anthropic. 
 
 - **Anthropic**
     - claude-3-5-sonnet-20240620
+    - claude-3-5-sonnet-20241022
     - claude-3-opus-20240229
     - claude-3-haiku-20240307
+    - claude-3-5-haiku-20241022
+- **Grok**
+    - grok-beta
+    - grok-2-1212
 
 ## Results
 For a full breakdown please see the full report. The best performer was Antropic's Claude 3.5 Sonnet which answered 181 questions correctly out of 210 possible questions.
@@ -47,6 +63,8 @@ For a full breakdown please see the full report. The best performer was Antropic
 ![Number of Correct Answers by AI Model](Create%20Graphs/graphs/Number%20of%20Correct%20Answers%20by%20AI%20Model.png)
 
 The full report also contains a breakdown of the number of correct answers by subject matter, cost, duration, and compared to human performance.
+
+As I continue to run more models I will put the results in the "Results" folder. "NCBE MBE Questions_Answer_HumanChecked.csv" is the original file that the paper was based on.
 
 ## Raw Data
 The MBE questions from this study cannot be included publically because they belong to the National Conference of Bar Examiners. However, they can be purchased at https://store.ncbex.org/mbe-study-aid-download/. 
@@ -69,3 +87,4 @@ There are a couple of areas we would like to explore in the future.
 - I had a lot of trouble with getting the lower level llama models to return a single character. I eventually had to check to see if the answer was more than a character and if not then use ChatGPT to determine what the correct letter was. All of these were manually checked for accuracy though.
 - I had to turn off Gemini's dangerous content block as it would flag it as potentially offensive.
 - Llama is more traditionally known as an LLM that you can launch on a local machine but we are using a service that hosts several llama models call DeepInfra. A different set up could lower costs and time.
+- For Gemini models I used the "-latest" models which I later went back and changed to the stable model they were pointing towards. 
