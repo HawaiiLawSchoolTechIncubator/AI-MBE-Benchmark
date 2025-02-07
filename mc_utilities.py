@@ -7,7 +7,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import anthropic
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import csv
-
+import re
 
 
 def loadModelCosts():
@@ -42,7 +42,7 @@ def useChatGPTToGetAnswerFromLongAnswer(answer):
     
     # Generate the completion
     response = open_ai_client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         temperature=0,
         messages=[
             {"role": "system", "content": "You are an expert attorney."},
@@ -141,6 +141,8 @@ def gemini(question,model):
     results_dictionary["response"] = str(response)
     return results_dictionary
 
+
+
 def chatGPT(question,model):
     # Get the API key from the environment variables
     open_ai_api_key = os.getenv("open_ai_api_key")
@@ -219,29 +221,39 @@ def chatGPT(question,model):
 
 
 
-def llama(question,model):
+def llama_deepseek(question,model,platform):
     # Get the API key from the environment variables
     deepinfra_api_key = os.getenv("deepinfra_api_key")
 
     # Create the OpenAI client
-    llama_client = OpenAI(
+    client = OpenAI(
         api_key=deepinfra_api_key,
         base_url="https://api.deepinfra.com/v1/openai")
 
     prompt_setup = "Choose the correct answer to the following question."
     final_prompt = prompt_setup + question + "Your response should be a single letter (A, B, C, or D) nothing else."
     
+    #Need to add the model identifier for DeepInfra
+    #deepseek-ai/
+    #meta-llama/
+    if(platform == 'DeepSeek'):
+        deepinfra_identifier = "deepseek-ai/"
+    elif(platform == 'Llama'):
+        deepinfra_identifier = "meta-llama/"
+
     # Start the timer so we can get total time.
     start_time = time.time()
     # Generate the completion
-    response = llama_client.chat.completions.create(
-        model=model,
+    response = client.chat.completions.create(
+        model=deepinfra_identifier + model,
         temperature=temperature,
         top_p = top_p,
+        max_tokens = 5000,
         messages=[
             {"role": "system", "content": "You are an expert attorney."},
             {"role": "user", "content": final_prompt},
-        ]
+        ],
+        timeout=500
     )
     # End the timer and calculate the duration
     end_time = time.time()
@@ -259,7 +271,14 @@ def llama(question,model):
 
     # If the answer is more than one letter after removing special characters, then there is an error.
     if(len(answer_joined) > 1):
-        ai_answer = useChatGPTToGetAnswerFromLongAnswer(results_dictionary['Original Answer'])
+        print(answer)
+        #This removes the thinking from the deepseek model response
+        ai_answer_removing_think = re.sub(r'<think>.*?</think>\s*', '', answer, flags=re.DOTALL).strip()
+        print(ai_answer_removing_think)
+        if(len(ai_answer_removing_think) > 1):
+            ai_answer = useChatGPTToGetAnswerFromLongAnswer(results_dictionary['Original Answer'])
+        else:
+            ai_answer = ai_answer_removing_think
     else:
         ai_answer = None
 

@@ -3,5 +3,8 @@ venv/
 .env
 notes.txt
 AI Comparison on MBE Questions.docx
+AI Comparison on MBE Questions.pdf
 NCBE MBE Questions.csv
 Results/NCBE MBE Questions_Answer_HumanChecked - Backup.csv
+Other Analysis/*
+Results/Unredacted/*
