@@ -22,5 +22,5 @@ def openai_models():
         print(model.id)
 
 load_dotenv()
-openai_models()
-#gemini_models()
+#openai_models()
+gemini_models()

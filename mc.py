@@ -30,11 +30,32 @@ def checkIfAlreadyAnswered(question_number,ai_model):
         reader = csv.DictReader(file)
         for row in reader:
             if row['Question Number'] == question_number and row['Model'] == ai_model:
+                print("Already answered: ",question_number,ai_model)
                 return True
     return False
 def checkAgainstSingleAI(question,question_number,right_answer,question_category,ai_platform,models):
+    glama_models = ["o3-mini-2025-01-31","o3-mini-high","o1-2024-12-17","qwen-max","qwen-plus","qwen-turbo","grok-3"]
+    if any(item in glama_models for item in models):
+        #Glama.ai for certain models
+        #This will only work if all the models given are Glama.ai models.
+        for model in models:
+            if(checkIfAlreadyAnswered(question_number,model)):
+                continue
+            results = glama(question,model,ai_platform)
+            results['Question Number'] = question_number
+            results['Law Category'] = question_category
+            results['Right Answer'] = right_answer
+            results['Model'] = model
+            results['AI Platform'] = ai_platform
+            results['total_cost'] = f"{results['total_cost']:.10f}".rstrip('0').rstrip('.')
+            results['prompt_cost'] = f"{results['prompt_cost']:.10f}".rstrip('0').rstrip('.')
+            results['completion_cost'] = f"{results['completion_cost']:.10f}".rstrip('0').rstrip('.')
+            results['Correct'] = True if results['Right Answer'] == results['Best Answer'] else False
+            writeAnswerToCSV(results,model)
+            time.sleep(15)
+
     #Check ChatGPT models
-    if ai_platform == "ChatGPT":
+    elif ai_platform == "ChatGPT":
         for model in models:
             if(checkIfAlreadyAnswered(question_number,model)):
                 continue
@@ -116,9 +137,11 @@ def checkAgainstSingleAI(question,question_number,right_answer,question_category
 
 
 filename = 'NCBE MBE Questions.csv'
-ai_platform = "Llama"
-models = ["Llama-3.3-70B-Instruct","Llama-3.3-70B-Instruct-Turbo"]
-
+#ai_platform = "Alibaba"
+ai_platform = "ChatGPT"
+models = ["o1-2024-12-17"]
+#o1-2024-12-17
+#qwen-max
 with open(filename, 'r', encoding='utf-8-sig') as file:
     reader = csv.DictReader(file)
     for x,row in enumerate(reader):
@@ -141,6 +164,6 @@ with open(filename, 'r', encoding='utf-8-sig') as file:
         print("Question Number: ",question_number)
         #checkQuestionAgainstAllAis(full_question,question_number,right_answer,question_category)
         checkAgainstSingleAI(full_question,question_number,right_answer,question_category,ai_platform,models)
-        #time.sleep(.3)
-        if x > 250:
+        #time.sleep(15) #This is useful for some gemini experimental models that have limits on how many requests you can make per minute
+        if x > 220:
             break

@@ -8,7 +8,8 @@ import anthropic
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import csv
 import re
-
+import requests
+import json
 
 def loadModelCosts():
     #Stores the costs of the models in a dictionary
@@ -141,7 +142,118 @@ def gemini(question,model):
     results_dictionary["response"] = str(response)
     return results_dictionary
 
+def glama(question, model,platform):
+    print("Running Glama")
+    # Get the API key from the environment variables
+    glama_api_key = os.getenv("glama_api_key")
 
+   # API endpoint
+    url = 'https://glama.ai/api/gateway/openai/v1/chat/completions'
+
+    # Headers
+    headers = {
+        'Authorization': f'Bearer {glama_api_key}',
+        'Content-Type': 'application/json'
+    }
+    prompt_setup = "Choose the correct answer to the following question."
+    final_prompt = prompt_setup + question + "Your response should be a single letter (A, B, C, or D) nothing else."
+    #Different models have different options so we use different payloads for each model.
+    if(platform == 'ChatGPT'):
+        glama_identifier = "openai/"
+        payload = {
+            "model": glama_identifier + model,
+            "messages": [
+                {"role": "user", 
+                "content": "You are an expert attorney." + final_prompt}
+            ],
+            "reasoning_effort": "high",
+            "max_completion_tokens": 25000,
+            #"temperature":temperature,
+            #"top_p":top_p,
+        }
+    elif(platform == 'Alibaba'):
+        glama_identifier = "alibaba/"
+        payload = {
+            "model": glama_identifier + model,
+            "messages": [
+                {'role': 'system', 'content': 'You are an expert attorney.'},
+                {"role": "user", "content": final_prompt}
+            ],
+            #"reasoning_effort": "high",
+            "max_tokens": 8000,
+            "temperature":temperature,
+            #"top_p":top_p,
+        }
+    elif(platform == 'Grok'):
+        #I'm not sure this is needed since only xai runs this model
+        glama_identifier = "xai/"
+        payload = {
+            "model": glama_identifier + model,
+            "messages": [
+                {"role": "user", 
+                "content": "You are an expert attorney." + final_prompt}
+            ],
+            "reasoning_effort": "high",
+            "max_completion_tokens": 25000,
+            #"temperature":temperature,
+            #"top_p":top_p,
+        }
+    # Start the timer so we can get total time.
+    start_time = time.time()
+
+    # Send the request
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    end_time = time.time()
+    duration = end_time - start_time
+    # Check for successful response
+    if response.status_code != 200:
+        print(f"Request failed with status code {response.status_code}: {response.text}")
+        exit()
+
+    # Parse the JSON response
+    response_data = response.json()
+    # Extract and print the assistant's reply
+    #print(response_data)
+
+
+    results_dictionary = {}
+
+    # Extract the answer from the response and clean it to remove any special characters.
+    # This is needed because sometimes the response may be "A." so we need to remove the .
+    answer = response_data['choices'][0]['message']['content']
+
+    results_dictionary['Original Answer'] = answer.strip()
+
+    answer = ''.join(c for c in answer if c.isalpha()).strip()
+
+    # If the answer is more than one letter after removing special characters, then there is an error.
+    if(len(answer) > 1):
+        ai_answer = useChatGPTToGetAnswerFromLongAnswer(results_dictionary['Original Answer'])
+    else:
+        ai_answer = None    
+
+    #Selects the best answer to use for the final answer.
+    #If there is an AI answer then use that, otherwise use the original answer.
+    if(ai_answer != None):
+        best_answer = ai_answer
+    else:
+        best_answer = answer
+    #Cost of tokens
+    cost_per_million_tokens_prompt,cost_per_million_tokens_completion = getCostOfModel(model)
+
+    results_dictionary["Answer Special Characters Removed"] = answer
+    results_dictionary["AI answer"] = ai_answer
+    results_dictionary["Best Answer"] = best_answer
+    results_dictionary["completion_tokens"] = response_data['usage']['completion_tokens']
+    results_dictionary["prompt_tokens"] = response_data['usage']['prompt_tokens']
+    results_dictionary["prompt_cost"] = (results_dictionary["prompt_tokens"] / 1_000_000) * cost_per_million_tokens_prompt
+    results_dictionary["completion_cost"] = (results_dictionary["completion_tokens"] / 1_000_000) * cost_per_million_tokens_completion
+    results_dictionary["total_tokens"] = response_data['usage']['total_tokens']
+    results_dictionary["total_cost"] = results_dictionary["prompt_cost"] + results_dictionary["completion_cost"]
+    results_dictionary["duration"] = duration
+    results_dictionary["response"] = str(response_data)
+
+    return results_dictionary
 
 def chatGPT(question,model):
     # Get the API key from the environment variables
